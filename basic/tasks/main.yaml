@@ -1,0 +1,182 @@
+- name: "Installing OpenVPN"
+  apt: name={{item}} state=present
+  with_items:
+    - openvpn
+    - easy-rsa
+
+- name: "Setting up CA"
+  command: make-cadir ~/openvpn-ca
+  args:
+    creates: ~/openvpn-ca
+
+- name: "Setting the CA properties country"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_COUNTRY' 
+    line: 'export KEY_COUNTRY="US"'
+
+- name: "Setting the CA properties province"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_PROVINCE' 
+    line: 'export KEY_PROVINCE="NY"'
+
+- name: "Setting the CA properties city"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_CITY' 
+    line: 'export KEY_CITY="New York City"'
+
+- name: "Setting the CA properties organization"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_ORG' 
+    line: 'export KEY_ORG="DigitalOcean"'
+
+- name: "Setting the CA properties email"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_EMAIL' 
+    line: 'export KEY_EMAIL="mahadev.gaonkar@gmail.com"'     
+
+- name: "Setting the CA properties OU"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_OU' 
+    line: 'export KEY_OU="Community"'     
+
+- name: "Setting the CA properties name"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_NAME' 
+    line: 'export KEY_NAME="server"'     
+
+- name: "Start clean"
+  shell: ~/openvpn-ca/clean-all
+
+- name: "Build root CA certificate"
+  shell: source ~/openvpn-ca/vars && ~/openvpn-ca/clean-all && ~/openvpn-ca/pkitool --initca
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - buildca
+
+- name: "Build server certificate"
+  shell: source ~/openvpn-ca/vars && ~/openvpn-ca/pkitool --server server 
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - buildserver
+
+- name: "Build DH"
+  shell: source ~/openvpn-ca/vars && ~/openvpn-ca/build-dh 
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - builddh
+
+- name: "Build HMAC"
+  shell: source ~/openvpn-ca/vars && openvpn --genkey --secret keys/ta.key
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - buildhmac
+
+- name: "Build client certificate"
+  shell: source ~/openvpn-ca/vars && ~/openvpn-ca/pkitool client1 
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - buildclient
+
+- name: "Copy certificates and keys"
+  copy:
+    src: ~/openvpn-ca/keys/{{item}}
+    dest: /etc/openvpn
+    remote_src: yes
+  with_items:
+    ['ca.crt','server.crt','server.key','ta.key', 'dh2048.pem']
+  tags:
+    - copycerts 
+
+- name: "Copy sample openvpn configuration"
+  shell: gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz | sudo tee /etc/openvpn/server.conf 
+  args:
+    chdir: ~/openvpn-ca
+    executable: /bin/bash
+  tags:
+    - copyconfig
+
+- name: "Setting TLS AUTH in config"
+  lineinfile: 
+    path: /etc/openvpn/server.conf
+    regexp: 'tls-auth ta.key 0' 
+    line: "tls-auth ta.key 0\nkey-direction 0"
+  tags:
+    - setconfig
+
+- name: "Setting cipher in config"
+  lineinfile: 
+    path: /etc/openvpn/server.conf
+    regexp: 'cipher AES-128-CBC' 
+    line: "cipher AES-128-CBC\nauth SHA256"
+  tags:
+    - setconfig
+
+- name: "Setting nobody user in config"
+  lineinfile: 
+    path: /etc/openvpn/server.conf
+    regexp: 'user nobody' 
+    line: "user nobody"
+  tags:
+    - setconfig
+
+- name: "Setting nogroup group in config"
+  lineinfile: 
+    path: /etc/openvpn/server.conf
+    regexp: 'group nogroup' 
+    line: "group nogroup"
+  tags:
+    - setconfig
+
+- name: "Setting IP forwarding"
+  lineinfile: 
+    path: /etc/sysctl.conf
+    regexp: 'net.ipv4.ip_forward' 
+    line: "net.ipv4.ip_forward=1"
+  tags:
+    - setipforward
+
+- name: "Sysctl reload"
+  shell: sysctl -p
+  tags:
+    - reloadsysctl
+
+- name: "Allow VPN traffic on port 1194 UDP"
+  shell: ufw allow 1194/udp
+  tags:
+    - openport
+
+- name: "Allow VPN traffic on SSH"
+  shell: ufw allow OpenSSH
+  tags:
+    - openport
+
+- name: "Reload firewall"
+  shell: ufw disable && ufw --force enable
+  tags:
+    - openport
+
+- name: "Start OpenVPN"
+  shell: systemctl start openvpn@server && systemctl enable openvpn@server 
+  tags:
+    - startvpn
+
+
+  
+
