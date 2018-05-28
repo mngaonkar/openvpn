@@ -177,6 +177,20 @@
   tags:
     - startvpn
 
+- name: "Create client config directory"
+  file:
+    path: ~/client-configs/files
+    state: directory
+  tags:
+    - clientconfig
 
-  
+- name: "Copy base client config"
+  copy:
+    src: /usr/share/doc/openvpn/examples/sample-config-files/client.conf
+    dest: ~/client-configs/base.conf
+    remote_src: yes
+  tags:
+    - clientconfig
+
+
 
