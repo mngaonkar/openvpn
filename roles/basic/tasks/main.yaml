@@ -155,22 +155,31 @@
 - name: "Sysctl reload"
   shell: sysctl -p
   tags:
-    - reloadsysctl
+    - setipforward
+
+- name: "IP forward settings"
+  lineinfile: 
+    path: /etc/default/ufw
+    regexp: 'DEFAULT_FORWARD_POLICY' 
+    line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+  tags:
+    - firewallconfig
+
 
 - name: "Allow VPN traffic on port 1194 UDP"
   shell: ufw allow 1194/udp
   tags:
-    - openport
+    - firewallconfig
 
 - name: "Allow VPN traffic on SSH"
   shell: ufw allow OpenSSH
   tags:
-    - openport
+    - firewallconfig
 
 - name: "Reload firewall"
   shell: ufw disable && ufw --force enable
   tags:
-    - openport
+    - firewallconfig
 
 - name: "Start OpenVPN"
   shell: systemctl start openvpn@server && systemctl enable openvpn@server 
@@ -191,6 +200,15 @@
     remote_src: yes
   tags:
     - clientconfig
+
+- name: "Setting public IP address"
+  lineinfile: 
+    path: ~/client-configs/base.conf
+    regexp: 'remote\s+\w+\s+1194' 
+    line: "remote 204.48.17.242 1194"
+  tags:
+    - clientconfig
+
 
 - name: "Setting nobody user in config"
   lineinfile: 
