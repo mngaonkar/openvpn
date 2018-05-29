@@ -144,6 +144,17 @@
   tags:
     - setconfig
 
+- name: "Setting redirect all traffic over VPN"
+  lineinfile: 
+    path: /etc/openvpn/server.conf
+    regexp: 'redirect-gateway def1 bypass-dhcp' 
+    line: 'push "redirect-gateway def1 bypass-dhcp"'
+  tags:
+    - setconfig
+
+
+
+
 - name: "Setting IP forwarding"
   lineinfile: 
     path: /etc/sysctl.conf
