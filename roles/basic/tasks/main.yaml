@@ -216,10 +216,15 @@
   lineinfile: 
     path: ~/client-configs/base.conf
     regexp: 'remote\s+\w+\s+1194' 
-    line: "remote 204.48.17.242 1194"
+    line: "remote {{ansible_default_ipv4.address}} 1194"
   tags:
-    - clientconfig
+    - clientconfigip
 
+- debug:
+    msg: "{{ansible_default_ipv4.address}}" 
+  tags:
+    - printip
+    
 
 - name: "Setting nobody user in config"
   lineinfile: 
