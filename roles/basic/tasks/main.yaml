@@ -152,9 +152,6 @@
   tags:
     - setconfig
 
-
-
-
 - name: "Setting IP forwarding"
   lineinfile: 
     path: /etc/sysctl.conf
@@ -176,7 +173,6 @@
   tags:
     - firewallconfig
 
-
 - name: "Allow VPN traffic on port 1194 UDP"
   shell: ufw allow 1194/udp
   tags:
@@ -186,6 +182,21 @@
   shell: ufw allow OpenSSH
   tags:
     - firewallconfig
+
+- name: Masquerade traffic from VPN
+  blockinfile:
+    path: /etc/ufw/before.rules
+    block: |  
+      # START OPENVPN RULES
+      # NAT table rules
+      *nat
+      :POSTROUTING ACCEPT [0:0] 
+      # Allow traffic from OpenVPN client  (change to the interface you discovered!)
+      -A POSTROUTING -s 10.8.0.0/8 -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+      COMMIT
+      # END OPENVPN RULES
+  tags:
+    - masq
 
 - name: "Reload firewall"
   shell: ufw disable && ufw --force enable
@@ -224,7 +235,6 @@
     msg: "{{ansible_default_ipv4.address}}" 
   tags:
     - printip
-    
 
 - name: "Setting nobody user in config"
   lineinfile: 
