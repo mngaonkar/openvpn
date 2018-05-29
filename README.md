@@ -1,9 +1,9 @@
-#OpenVPN setup
+# OpenVPN setup
 
-##Objective
+## Objective
 The is an ansible script to spin a VPN server on Ubuntu 16.04
 
-##Steps
+## Steps
 1. Update hosts file with IP address
 2. Make sure Python 2.7 is installed on the remote server
 `apt-get install python`
