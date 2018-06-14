@@ -1,7 +1,7 @@
 # OpenVPN setup with Ansible
 
 ## Objective
-The is an ansible script to spin a VPN server on Ubuntu 16.04
+This is an ansible script to spin a VPN server on Ubuntu 16.04
 
 ## Steps
 1. Update hosts file with IP address
