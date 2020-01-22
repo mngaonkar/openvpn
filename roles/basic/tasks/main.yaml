@@ -9,6 +9,13 @@
   args:
     creates: ~/openvpn-ca
 
+- name: "Setting openssl config file path"
+  lineinfile: 
+    path: ~/openvpn-ca/vars
+    regexp: 'KEY_CONFIG' 
+    line: 'export KEY_CONFIG="$HOME/openvpn-ca/openssl-1.0.0.cnf"'
+
+
 - name: "Setting the CA properties country"
   lineinfile: 
     path: ~/openvpn-ca/vars
