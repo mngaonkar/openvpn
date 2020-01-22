@@ -267,6 +267,14 @@
   tags:
     - clientconfig
 
+- name: "Comment TLS file lookup"
+  lineinfile: 
+    path: ~/client-configs/base.conf
+    regexp: 'tls-auth ta.key' 
+    line: "tls-auth ta.key 0"
+  tags:
+    - clientconfig
+
 - name: "Comment certs"
   lineinfile: 
     path: ~/client-configs/base.conf
